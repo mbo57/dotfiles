@@ -1,0 +1,1 @@
+/home/mbo/.wezterm.lua
