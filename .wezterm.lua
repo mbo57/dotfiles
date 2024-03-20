@@ -11,11 +11,11 @@ end
 -- config.color_scheme = "Atelier Dune (base16)"
 -- config.color_scheme = "Ayu Mirage"
 -- config.color_scheme = "Bamboo"
--- config.color_scheme = "Catppuccin Macchiato"
+config.color_scheme = "Catppuccin Macchiato"
 -- config.color_scheme = "Catppuccin Mocha"
 -- config.color_scheme = "Chalk (Gogh)"
 -- config.color_scheme = "nord"
-config.color_scheme = "catppuccin-frappe"
+-- config.color_scheme = "catppuccin-frappe"
 
 wezterm.on('toggle_opacity', function(window)
     local overrides = window:get_config_overrides() or {}
