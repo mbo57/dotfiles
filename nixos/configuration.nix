@@ -1,68 +1,45 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-{ inputs, config, pkgs, ... }: 
+# and in the NixOS manual (accessible by running 'nixos-help').
+{ inputs, config, pkgs, ... }:
 let
   unstable = inputs.nixpkgs-unstable.legacyPackages.${pkgs.system};
 in {
   nixpkgs.overlays = [
     (final: prev: {
       vim = unstable.vim;
-      vim_configurable = unstable.vim_configurable;
     })
   ];
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      # ./overlays/strongswan.nix
-    ];
-    # ++ [
-    #   inputs.xremap.nixosModules.default
-    # ];
+
+  imports = [
+    ./hardware-configuration.nix
+  ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  # Bootloader.
+  # Bootloader
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "nixos"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  networking.hostName = "nixos";
 
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+  # Networking
+  networking.networkmanager = {
+    enable = true;
+    plugins = [
+      pkgs.networkmanager-l2tp
+      pkgs.networkmanager-strongswan
+    ];
+  };
 
   environment.etc."strongswan.conf".text = ''
     libstrongswan {
     }
   '';
 
-  # Enable networking
-  networking = {
-    networkmanager = {
-      enable = true;
-      plugins = [
-        pkgs.networkmanager-l2tp
-        pkgs.networkmanager-strongswan
-      ];
-    };
-  };
-  # services = {
-  #   strongswan = {
-  #     enable = true;
-  #     # secrets = [
-  #     #   "ipsec.d/ipsec.nm-l2tp.secrets"
-  #     # ];
-  #   };
-  # };
-
-  # Set your time zone.
+  # Timezone & Locale
   time.timeZone = "Asia/Tokyo";
-
-  # Select internationalisation properties.
   i18n.defaultLocale = "en_US.UTF-8";
-
   i18n.extraLocaleSettings = {
     LC_ADDRESS = "ja_JP.UTF-8";
     LC_IDENTIFICATION = "ja_JP.UTF-8";
@@ -75,153 +52,59 @@ in {
     LC_TIME = "ja_JP.UTF-8";
   };
 
+  # Fonts
   fonts = {
     packages = with pkgs; [
       noto-fonts
       noto-fonts-cjk-sans
       noto-fonts-color-emoji
-
       source-han-mono
       source-han-sans
       source-han-serif
     ];
-
     fontconfig = {
       enable = true;
-
       defaultFonts = {
         sansSerif = [ "Noto Sans CJK JP" "DejaVu Sans" ];
         serif = [ "Noto Serif JP" "DejaVu Serif" ];
       };
-
-      subpixel = { lcdfilter = "light"; };
+      subpixel.lcdfilter = "light";
     };
   };
 
-  # Enable the X11 windowing system.
-  # services.xserver.enable = true;
-  # services.xserver.videoDrivers = [ "amdgpu-pro" ];
-
-  # Enable the GNOME Desktop Environment.
+  # Desktop Environment
   services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
 
-  # Enable CUPS to print documents.
+  # Printing
   services.printing.enable = true;
 
-  # Enable sound with pipewire.
-  # sound.enable = true; # ALSAを有効化
-  # services.pulseaudio.enable = true;
-  # services.pulseaudio.enable = false;
-  # security.rtkit.enable = true;
-  # services.pipewire = {
-  #   enable = true;
-  #   alsa.enable = true;
-  #   alsa.support32Bit = true;
-  #   pulse.enable = true;
-  #   # If you want to use JACK applications, uncomment this
-  #   #jack.enable = true;
-
-  #   # use the example session manager (no others are packaged yet so this is enabled by default,
-  #   # no need to redefine it in your config for now)
-  #   #media-session.enable = true;
-  # };
-
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
-
-
-  # services.xremap = {
-  #   enable = true;
-  #   userName = "mbo57";
-  #   serviceMode = "system";
-  #   config = {
-  #     modmap = [
-  #       {
-  #         # CapsLockをCtrlに置換
-  #         name = "CapsLock is dead";
-  #         remap = {
-  #           CapsLock = "Ctrl_L";
-  #         };
-  #       }
-  #     ];
-  #     keymap = [
-  #       {
-  #         name = "Reset CapsLock";
-  #         remap = {
-  #           "Ctrl_L-Ctrl_R" = "CapsLock";
-  #         };
-  #       }
-  #       {
-  #         # Shift + CapsLock 3回でCapsLockをトグル
-  #         name = "Reset CapsLock";
-  #         remap = {
-  #           "Ctrl_L-Ctrl_R" = "CapsLock";
-  #         };
-  #       }
-  #       {
-  #         name = "toggle CapsLock";
-  #         remap = {
-  #           "Super-Ctrl_L" = "CapsLock";
-  #         };
-  #       }
-  #     ];
-  #   };
-  # };
-  # systemd.services.keyd = {
-  #   description = "Keyd Service";
-  #   after = [ "network.target" ];
-  #   wantedBy = [ "multi-user.target" ];
-  #   serviceConfig = {
-  #     ExecStart = "${pkgs.keyd}/bin/keyd";
-  #     Restart = "always";
-  #   };
-  # };
-  systemd.services.keyd = {
-    description = "Keyd Service";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      ExecStart = "${pkgs.keyd}/bin/keyd";
-      Restart = "always";
+  # Keyd (CapsLock → Ctrl)
+  services.keyd = {
+    enable = true;
+    keyboards.default = {
+      ids = [ "*" ];
+      settings.main.capslock = "leftcontrol";
     };
   };
-  environment.etc."keyd/default.conf".text = ''
-    [ids]
-    *
 
-    [main]
-    capslock = leftcontrol
-  '';
-    # capslock = leftctrl
-    # capslock = layer(capslock)
-    # leftctrl = capslock
-
+  # Garbage Collection
   nix.gc = {
     automatic = true;
     dates = "weekly";
     options = "--delete-older-than 30d";
   };
 
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
+  # User
   users.users.mbo57 = {
     isNormalUser = true;
     description = "mbo57";
-    extraGroups = [
-      "networkmanager"
-      "wheel"
-      "docker"
-      "input"
-      "video"
-    ];
-    packages = with pkgs; [
-    #  thunderbird
-    ];
+    extraGroups = [ "networkmanager" "wheel" "docker" "input" "video" ];
     shell = pkgs.zsh;
   };
 
+  # Avahi (mDNS)
   services.avahi = {
     enable = true;
     nssmdns4 = true;
@@ -232,67 +115,29 @@ in {
     };
   };
 
-  # Enable automatic login for the user.
+  # Auto Login
   services.displayManager.autoLogin.enable = true;
   services.displayManager.autoLogin.user = "mbo57";
-
-  # Workaround for GNOME autologin: https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
   systemd.services."getty@tty1".enable = false;
   systemd.services."autovt@tty1".enable = false;
- 
 
-  # Install firefox.
+  # Programs
   programs.firefox.enable = true;
-
   programs.zsh.enable = true;
-  # programs.hyprland.enable = true;
 
-  # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
   environment.systemPackages = with pkgs; [
-    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    vim
     git
     neovim
     slack
     wezterm
-    xremap
     keyd
-  #  wget
   ];
 
+  # Docker
+  virtualisation.docker.enable = true;
 
-  virtualisation.docker = {
-    enable = true;
-  };
-
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.05"; # Did you read the comment?
-
+  system.stateVersion = "25.05";
 }
